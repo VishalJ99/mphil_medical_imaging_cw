@@ -11,4 +11,3 @@ dependencies:
   - matplotlib
   - pre-commit
   - scipy
-  - configparser
