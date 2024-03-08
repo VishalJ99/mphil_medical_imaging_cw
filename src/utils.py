@@ -2,20 +2,22 @@ import pydicom
 import nibabel as nib
 import numpy as np
 import os
+import torch
+import random
 
 # TODO: De identify patients patientname, patientid, patientdob, patientsex
 
 
-def load_npz(file_path):
+def load_npz(file_path, dtype=np.int16):
     # Load segmentation data from .npz file
     data = np.load(file_path)
     assert len(data.files) == 1, "The .npz file should contain only one array"
     tag = data.files[0]
-    arr = data[tag]
+    arr = data[tag].astype(dtype)
     return arr
 
 
-def dicom_dir_to_3d_arr(dicom_dir):
+def dicom_dir_to_3d_arr(dicom_dir, dtype=np.int16):
     # Load all DICOM files in the given directory and sort them by slice
     # position
     files = [
@@ -26,7 +28,7 @@ def dicom_dir_to_3d_arr(dicom_dir):
     files.sort(key=lambda x: float(x.ImagePositionPatient[2]))
 
     # Stack the pixel arrays to create a 3D array
-    arr = np.stack([f.pixel_array for f in files])
+    arr = np.stack([f.pixel_array for f in files]).astype(dtype)
 
     return arr
 
@@ -49,3 +51,35 @@ def make_niftis(img_dir, seg_f, out_dir):
     seg_nii_f = os.path.join(out_dir, "seg.nii.gz")
     nib.save(img_nii, img_nii_f)
     nib.save(seg_nii, seg_nii_f)
+
+
+def set_device():
+    # Check for CUDA, then MPS, and default to CPU
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
+    return device
+
+
+def seed_everything(seed):
+    # Set `PYTHONHASHSEED` environment variable to the seed.
+    os.environ["PYTHONHASHSEED"] = str(seed)
+
+    # Set seed for all packages with built-in pseudo-random generators.
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    # 5. If using CUDA, set also the below for determinism.
+    if torch.cuda.is_available():
+        # Sets the seed for generating random numbers for the current GPU.
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)  # if using multi-GPU.
+
+        # Ensures that the CUDA convolution uses deterministic algorithms
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
