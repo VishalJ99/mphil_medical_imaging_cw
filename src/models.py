@@ -94,7 +94,7 @@ class SimpleUNet(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.conv1 = self.conv_block(in_channels, 16, 3, 1, 1)
-        self.maxpooll = self.maxpool_block(2, 2, 0)
+        self.maxpool1 = self.maxpool_block(2, 2, 0)
         self.conv2 = self.conv_block(16, 32, 3, 1, 1)
         self.maxpool2 = self.maxpool_block(2, 2, 0)
         self.conv3 = self.conv_block(32, 64, 3, 1, 1)
@@ -183,7 +183,7 @@ class SimpleUNet(nn.Module):
         upsample2 = self.upsample2(upconv3)
         upconv2 = self.upconv2(torch.cat([upsample2, conv2], 1))
         upsample1 = self.upsample1(upconv2)
-        upconv1 = self.upconvi1(torch.cat([upsample1, conv1], 1))
+        upconv1 = self.upconv1(torch.cat([upsample1, conv1], 1))
 
         final_layer = self.final(upconv1)
 
