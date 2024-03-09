@@ -4,6 +4,8 @@ import numpy as np
 import os
 import torch
 import random
+from losses import SoftDiceLoss, SoftDiceBCECombinedLoss
+import torch.nn as nn
 
 # TODO: De identify patients patientname, patientid, patientdob, patientsex
 
@@ -69,7 +71,7 @@ def seed_everything(seed):
     # Set `PYTHONHASHSEED` environment variable to the seed.
     os.environ["PYTHONHASHSEED"] = str(seed)
 
-    # Set seed for all packages with built-in pseudo-random generators.
+    # Set seed for all packages with built-in pseudo-raiAndom generators.
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -83,3 +85,48 @@ def seed_everything(seed):
         # Ensures that the CUDA convolution uses deterministic algorithms
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+
+
+def load_slices_from_dataset(img_dir, mask_dir, only_foreground_slices=True):
+    # Load the 3D volume and mask for each case.
+    # Expects the dataset to be in the format of:
+    # Given in the cw.
+    all_slices_list = []
+    for case_name in os.listdir(img_dir):
+        case_fpath = os.path.join(img_dir, case_name)
+        mask_fpath = os.path.join(mask_dir, case_name + "_seg.npz")
+
+        case_arr = dicom_dir_to_3d_arr(case_fpath, np.float32)
+        mask_arr = load_npz(mask_fpath)
+
+        print(f"Case: {case_name}")
+        # Only add slice if there is a mask present.
+        # Create a tuple for each slice in the 3D volume.
+        for slice_idx in range(case_arr.shape[0]):
+            case_tuple = (
+                f"{case_name}_{slice_idx}",
+                case_arr[slice_idx],
+                mask_arr[slice_idx],
+            )
+            if only_foreground_slices:
+                if np.any(mask_arr[slice_idx]):
+                    all_slices_list.append(case_tuple)
+            else:
+                case_tuple = (
+                    f"{case_name}_{slice_idx}",
+                    case_arr[slice_idx],
+                    mask_arr[slice_idx],
+                )
+                all_slices_list.append(case_tuple)
+    return all_slices_list
+
+
+def get_loss_fns():
+    # Define the loss functions
+    loss_fns = {
+        "dice": SoftDiceLoss,
+        "bce": nn.BCEWithLogitsLoss,
+        "dice_and_bce": SoftDiceBCECombinedLoss,
+    }
+
+    return loss_fns
