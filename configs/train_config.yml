@@ -1,0 +1,28 @@
+# General Settings
+seed: 42 # Random seed for reproducibility.
+
+# Data Paths
+img_dir: Dataset/Images # Path to images directory - see README for expected file structure.
+mask_dir: Dataset/Segmentations # Path to masks directory - see README for expected file structure.
+
+
+# Model Configuration
+model_str: demo_unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
+model_save_dir: models_temp # Directory to save trained model weights.
+model_weights_path: SimpleUNet_v3.pt # Path to pre-trained model weights.
+
+# Training Parameters
+lr: 0.01 # Learning rate for training.
+epochs: 10 # Number of epochs to train the model.
+batch_size: 3 # Batch size for training operations.
+
+# Data Handling
+only_foreground_slices: true # Only include slices with non-zero foreground in the dataset.
+invert_background_foreground: false # Whether to invert background and foreground in masks.
+test_split: 0.33 # Fraction of the dataset reserved for testing.
+
+# Experimentation Mode
+quick_test: false # Enables quick test mode using only one case slice to test the pipeline.
+
+# Loss Configuration
+loss: dice_and_bce # Loss function to use during training. Combination of Dice and Binary Cross Entropy.

@@ -1,0 +1,13 @@
+name: mphil_medical_imaging_cw
+channels:
+  - defaults
+dependencies:
+  - numpy
+  - flake8
+  - pytest
+  - pandas
+  - black
+  - sphinx
+  - matplotlib
+  - pre-commit
+  - scipy
