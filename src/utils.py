@@ -6,6 +6,7 @@ import torch
 import random
 from losses import SoftDiceLoss, SoftDiceBCECombinedLoss
 import torch.nn as nn
+from models import SimpleUNet, UNet2D
 
 # TODO: De identify patients patientname, patientid, patientdob, patientsex
 
@@ -99,7 +100,6 @@ def load_slices_from_dataset(img_dir, mask_dir, only_foreground_slices=True):
         case_arr = dicom_dir_to_3d_arr(case_fpath, np.float32)
         mask_arr = load_npz(mask_fpath)
 
-        print(f"Case: {case_name}")
         # Only add slice if there is a mask present.
         # Create a tuple for each slice in the 3D volume.
         for slice_idx in range(case_arr.shape[0]):
@@ -121,7 +121,7 @@ def load_slices_from_dataset(img_dir, mask_dir, only_foreground_slices=True):
     return all_slices_list
 
 
-def get_loss_fns():
+def get_losses_dict():
     # Define the loss functions
     loss_fns = {
         "dice": SoftDiceLoss,
@@ -130,3 +130,13 @@ def get_loss_fns():
     }
 
     return loss_fns
+
+
+def get_model_dict():
+    # Define the model classes
+    model_dict = {
+        "unet": UNet2D,
+        "demo_unet": SimpleUNet,
+    }
+
+    return model_dict
