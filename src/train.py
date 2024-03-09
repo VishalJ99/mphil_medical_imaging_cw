@@ -16,26 +16,16 @@ from utils import (
     get_losses_dict,
     load_slices_from_dataset,
     get_model_dict,
+    safe_create_dir,
 )
-
-"""
-TODO:
-- Add config file
-- Customise name of the saved file so it contains the seed
-- Load hyper params from config file
-"""
 
 
 def main(config):
     # Check if models_temp_dir exists
     model_save_dir = config["model_save_dir"]
-    if not os.path.isdir(model_save_dir):
-        print("[INFO] Model save dir does not exit, making dir(s)")
-        os.makedirs(model_save_dir)
-    else:
-        if os.listdir(model_save_dir):
-            print("[ERROR] Files exist in model save_dir... exiting")
-            exit(1)
+
+    # Creates a dir if one does not exist. Will not overwrite an existing dir.
+    safe_create_dir(model_save_dir)
 
     # Save config yaml to model_save_dir with git commit hash.
     config["git_hash"] = os.popen("git rev-parse HEAD").read().strip()
@@ -72,11 +62,13 @@ def main(config):
     all_slices_list = load_slices_from_dataset(
         config["img_dir"],
         config["mask_dir"],
-        only_foreground_slices=config["only_foreground_slices"],
     )
-
     # Split 2D slice data into train and test sets.
     train, _ = train_test_split(all_slices_list, test_size=config["test_split"])
+
+    # If only foreground slices specified, remove entres with all zero masks.
+    if config["only_foreground_slices"]:
+        train = [case_tuple for case_tuple in train if case_tuple[2].any()]
 
     # Unpack case ids, images and masks from the train list.
     train_case_ids, train_images, train_masks = list(zip(*train))
@@ -182,14 +174,14 @@ def main(config):
         mask = masks[0].squeeze().cpu().detach().numpy()
         pred = (torch.sigmoid(preds[0]) > 0.5).squeeze().cpu().detach().numpy()
 
-        fig, ax = plt.subplots(ncols=3)
-        ax[0].imshow(mask)
-        ax[0].set_title("Ground Truth")
-        ax[1].imshow(pred)
-        ax[1].set_title("Prediction")
-        ax[2].imshow(img, cmap="gray")
-        ax[2].set_title("Image")
-        plt.show()
+        # fig, ax = plt.subplots(ncols=3)
+        # ax[0].imshow(mask)
+        # ax[0].set_title("Ground Truth")
+        # ax[1].imshow(pred)
+        # ax[1].set_title("Prediction")
+        # ax[2].imshow(img, cmap="gray")
+        # ax[2].set_title("Image")
+        # plt.show()
 
         wandb.log(
             {

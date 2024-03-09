@@ -88,7 +88,7 @@ def seed_everything(seed):
         torch.backends.cudnn.benchmark = False
 
 
-def load_slices_from_dataset(img_dir, mask_dir, only_foreground_slices=True):
+def load_slices_from_dataset(img_dir, mask_dir):
     # Load the 3D volume and mask for each case.
     # Expects the dataset to be in the format of:
     # Given in the cw.
@@ -100,7 +100,6 @@ def load_slices_from_dataset(img_dir, mask_dir, only_foreground_slices=True):
         case_arr = dicom_dir_to_3d_arr(case_fpath, np.float32)
         mask_arr = load_npz(mask_fpath)
 
-        # Only add slice if there is a mask present.
         # Create a tuple for each slice in the 3D volume.
         for slice_idx in range(case_arr.shape[0]):
             case_tuple = (
@@ -108,16 +107,7 @@ def load_slices_from_dataset(img_dir, mask_dir, only_foreground_slices=True):
                 case_arr[slice_idx],
                 mask_arr[slice_idx],
             )
-            if only_foreground_slices:
-                if np.any(mask_arr[slice_idx]):
-                    all_slices_list.append(case_tuple)
-            else:
-                case_tuple = (
-                    f"{case_name}_{slice_idx}",
-                    case_arr[slice_idx],
-                    mask_arr[slice_idx],
-                )
-                all_slices_list.append(case_tuple)
+            all_slices_list.append(case_tuple)
     return all_slices_list
 
 
@@ -140,3 +130,13 @@ def get_model_dict():
     }
 
     return model_dict
+
+
+def safe_create_dir(dir_path):
+    if not os.path.isdir(dir_path):
+        print("[INFO] Model save dir does not exit, making dir(s)")
+        os.makedirs(dir_path)
+    else:
+        if os.listdir(dir_path):
+            print("[ERROR] Files exist in model save_dir... exiting")
+            exit(1)
