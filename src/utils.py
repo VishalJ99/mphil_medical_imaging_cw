@@ -134,9 +134,9 @@ def get_model_dict():
 
 def safe_create_dir(dir_path):
     if not os.path.isdir(dir_path):
-        print("[INFO] Model save dir does not exit, making dir(s)")
+        print(f"[INFO] {dir_path} does not exit, making dir(s)")
         os.makedirs(dir_path)
     else:
         if os.listdir(dir_path):
-            print("[ERROR] Files exist in model save_dir... exiting")
+            print(f"[ERROR] Files exist in {dir_path}... exiting")
             exit(1)
