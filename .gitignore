@@ -8,3 +8,12 @@ output/
 docs/
 Dataset/
 niftis/
+wandb/
+mini_dataset/
+*weights/
+*temp*
+*.pt
+*output*
+
+# Notebooks
+*ipynb

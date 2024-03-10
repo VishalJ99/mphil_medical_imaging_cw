@@ -4,27 +4,20 @@ seed: 42 # Random seed for reproducibility.
 # Data Paths
 img_dir: Dataset/Images # Path to images directory - see README for expected file structure.
 mask_dir: Dataset/Segmentations # Path to masks directory - see README for expected file structure.
+output_dir: inverted_output_unet_testing # Directory to save output files - metrics.json, config.yml, segmentation dir (optional).
+save_segmentations: true # Directory to save model segmentations (saved in nifti format).
 
+# Testing Parameters
+eval_train_split: false # Evaluate performance on training set.
 
 # Model Configuration
 model_str: unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
-model_save_dir: inverted_model_weights # Directory to save trained model weights.
-model_weights_path: null # Path to pre-trained model weights.
-
-# Training Parameters
-lr: 0.01 # Learning rate for training.
-epochs: 10 # Number of epochs to train the model.
-batch_size: 3 # Batch size for training operations.
+model_weights_path: inverted_model_weights/epoch_10_model.pt # Path to model weights.
 
 # Data Handling
 only_foreground_slices: false # Only include slices with non-zero foreground in the dataset.
 invert_masks: true # Whether to invert background and foreground in masks.
-test_split: 0.33 # Fraction of the dataset reserved for testing.
+test_split: 0.33 # Fraction of the dataset reserved for testing. Ensure this is consistent with the training configuration.
 
 # Experimentation Mode
 quick_test: false # Enables quick test mode using only one case slice to test the pipeline.
-visualise: false # Visualise the model prediction on a random case after every epoch during training.
-                 # (NOTE: visualisations will be uploaded to wandb regardless).
-
-# Loss Configuration
-loss: dice_and_bce # Loss function to use during training. Combination of Dice and Binary Cross Entropy.
