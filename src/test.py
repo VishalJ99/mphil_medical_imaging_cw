@@ -127,6 +127,7 @@ def main(config):
         metrics_dict = {}
         total_dice = 0.0
         total_accuracy = 0.0
+        valid_dice_count = 0  # Count non-NaN dice scores
         pbar = tqdm(enumerate(test_loader), total=len(test_loader))
 
         for i, (images, masks, case) in pbar:
@@ -145,6 +146,9 @@ def main(config):
             else:
                 dice_loss = calc_dice_loss(preds, masks)
                 dice = (1 - dice_loss).item()
+                # Update totals only if dice is not NaN
+                total_dice += dice
+                valid_dice_count += 1  # Increment valid dice count
 
             # Add to metrics dict.
             metrics_dict[case_id] = {"dice": dice, "accuracy": accuracy}
@@ -162,17 +166,21 @@ def main(config):
                     nib.Nifti1Image(pred, np.eye(4)),
                     os.path.join(output_seg_dir, f"{case_id}_pred.nii.gz"),
                 )
-            # Update metrics.
-            total_dice += dice
+            # Update accuracy metrics.
             total_accuracy += accuracy
+            dice_str = "NaN" if torch.isnan(torch.tensor(dice)) else f"{dice:.4f}"
             pbar.set_description(
-                f"Case: {case[0]}, Dice: {dice:.4f}, Accuracy: {accuracy:.4f}"
+                f"Case: {case[0]}, Dice: {dice_str}, Accuracy: {accuracy:.4f}"
             )
 
-    # Log average metrics.
-    avg_dice = total_dice / len(test_loader)
-    avg_accuracy = total_accuracy / len(test_loader)
-    print(f"\nAverage Dice Score: {avg_dice:.4f}, Average Accuracy: {avg_accuracy:.4f}")
+        # Log average metrics, avoiding division by zero
+        avg_dice = total_dice / valid_dice_count if valid_dice_count > 0 else torch.nan
+        avg_accuracy = total_accuracy / len(test_loader)
+        avg_dice_str = "NaN" if np.isnan(avg_dice) else f"{avg_dice:.4f}"
+        print(
+            f"\nAverage Dice Score: {avg_dice_str},\
+              Average Accuracy: {avg_accuracy:.4f}"
+        )
 
     # Save results to a csv file.
     df = pd.DataFrame.from_dict(metrics_dict, orient="index")
