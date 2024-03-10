@@ -70,6 +70,15 @@ def main(config):
     if config["only_foreground_slices"]:
         train = [case_tuple for case_tuple in train if case_tuple[2].any()]
 
+    if config["invert_masks"]:
+        mask_dtype = train[0][2].dtype
+        # Casts the mask to a boolean array and performs a bitwise not operation.
+        # to invert the array, then casts it back to the original dtype.
+        train = [
+            (case_id, img, (~mask.astype(bool)).astype(mask_dtype))
+            for case_id, img, mask in train
+        ]
+
     # Unpack case ids, images and masks from the train list.
     train_case_ids, train_images, train_masks = list(zip(*train))
 
@@ -110,7 +119,11 @@ def main(config):
     optim = torch.optim.Adam(model.parameters(), lr=config["lr"])
 
     # Define the mask labels for wandb visualisations.
-    class_labels = {0: "background", 1: "lung"}
+    class_labels = (
+        {0: "background", 1: "lung"}
+        if config["invert_masks"]
+        else {0: "lung", 1: "background"}
+    )
 
     # TODO: load loss init from config file.
     loss_fn = loss_fn_dict[config["loss"]]()
@@ -123,7 +136,7 @@ def main(config):
     metric = BinaryAccuracy().to(device)
 
     # Train the model.
-    for epoch in range(config["epochs"]):
+    for epoch in range(1, config["epochs"] + 1):
         model.train()
         total_loss = 0
         total_acc = 0
@@ -134,9 +147,6 @@ def main(config):
         )
 
         for i, (images, masks, _) in progress_bar:
-            images = images
-            masks = masks
-
             optim.zero_grad()
             preds = model(images)
             loss = loss_fn(preds.to(torch.float32), masks.to(torch.float32)).mean()
@@ -174,14 +184,15 @@ def main(config):
         mask = masks[0].squeeze().cpu().detach().numpy()
         pred = (torch.sigmoid(preds[0]) > 0.5).squeeze().cpu().detach().numpy()
 
-        # fig, ax = plt.subplots(ncols=3)
-        # ax[0].imshow(mask)
-        # ax[0].set_title("Ground Truth")
-        # ax[1].imshow(pred)
-        # ax[1].set_title("Prediction")
-        # ax[2].imshow(img, cmap="gray")
-        # ax[2].set_title("Image")
-        # plt.show()
+        if config["visualise"]:
+            fig, ax = plt.subplots(ncols=3)
+            ax[0].imshow(mask)
+            ax[0].set_title("Ground Truth")
+            ax[1].imshow(pred)
+            ax[1].set_title("Prediction")
+            ax[2].imshow(img, cmap="gray")
+            ax[2].set_title("Image")
+            plt.show()
 
         wandb.log(
             {
