@@ -26,8 +26,10 @@ def main(config):
     # Creates a dir if one does not exist. Will not overwrite an existing dir.
     safe_create_dir(model_save_dir)
 
-    # Save config yaml to model_save_dir with git commit hash.
-    config["git_hash"] = os.popen("git rev-parse HEAD").read().strip()
+    # If .git file exists, add git hash to config.
+    if os.path.exists(".git"):
+        config["git_hash"] = os.popen("git rev-parse HEAD").read().strip()
+
     config_file = os.path.join(model_save_dir, "config.yaml")
     with open(config_file, "w") as f:
         yaml.dump(config, f)
@@ -38,15 +40,19 @@ def main(config):
     # Fetch device.
     device = set_device()
 
-    # Start a new wandb run to track this train job.
-    wandb.init(
-        project="medical_imaging_1",
-        config=config,
-    )
+    if config["wandb_log"]:
+        # Start a new wandb run to track this train job.
+        wandb.init(
+            project="medical_imaging_1",
+            config=config,
+        )
 
+    print("[INFO] Device set to:", device)
+    print("-" * 50)
     print("[INFO] Config options set.")
     for key, val in config.items():
         print(f"[INFO] {key}: {val}")
+    print("-" * 50)
 
     # Load the the slices from the volume and mask of each case.
     train_slices = load_slices_from_dataset(
@@ -156,8 +162,9 @@ def main(config):
             metric.update(preds, masks)
             accuracy = metric.compute()
 
-            wandb.log({"loss": loss.item()})
-            wandb.log({"accuracy": accuracy})
+            if config["wandb_log"]:
+                wandb.log({"loss": loss.item()})
+                wandb.log({"accuracy": accuracy})
 
             total_loss += loss.item()
             total_acc += accuracy
@@ -194,23 +201,24 @@ def main(config):
             ax[2].set_title("Image")
             plt.show()
 
-        wandb.log(
-            {
-                "lung_ct_seg_test": wandb.Image(
-                    img,
-                    masks={
-                        "predictions": {
-                            "mask_data": pred,
-                            "class_labels": class_labels,
+        if config["wandb_log"]:
+            wandb.log(
+                {
+                    "lung_ct_seg_test": wandb.Image(
+                        img,
+                        masks={
+                            "predictions": {
+                                "mask_data": pred,
+                                "class_labels": class_labels,
+                            },
+                            "ground_truth": {
+                                "mask_data": mask,
+                                "class_labels": class_labels,
+                            },
                         },
-                        "ground_truth": {
-                            "mask_data": mask,
-                            "class_labels": class_labels,
-                        },
-                    },
-                )
-            }
-        )
+                    )
+                }
+            )
 
     wandb.finish()
 
