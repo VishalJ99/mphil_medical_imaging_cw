@@ -43,7 +43,7 @@ class SoftDiceBCECombinedLoss(nn.Module):
         self.bce_loss = nn.BCEWithLogitsLoss()
 
     def forward(self, preds, targets):
-        dice_loss = self.dice_weight * self.dice_loss(preds, targets)
-        bce_loss = self.bce_weight * self.bce_loss(preds, targets)
-        combined_loss = dice_loss + bce_loss
+        dice_loss = self.dice_loss(preds, targets)
+        bce_loss = self.bce_loss(preds, targets)
+        combined_loss = self.dice_weight * dice_loss + self.bce_weight * bce_loss
         return combined_loss

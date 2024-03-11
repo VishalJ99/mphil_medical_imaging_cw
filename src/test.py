@@ -5,7 +5,6 @@ from tqdm import tqdm
 import torch
 from torchvision import transforms
 from torchmetrics.classification import BinaryAccuracy
-from sklearn.model_selection import train_test_split
 from accelerate import Accelerator
 from datasets import ImageSegmentationDataset
 from utils import (
@@ -53,33 +52,27 @@ def main(config):
         print(f"[INFO] {key}: {val}")
 
     # Load the the slices from the volume and mask of each case.
-    all_slices_list = load_slices_from_dataset(
+    test_slices = load_slices_from_dataset(
         config["img_dir"],
         config["mask_dir"],
+        case_ids=config["case_ids"],
     )
-
-    # Split 2D slice data into train and test sets.
-    train, test = train_test_split(all_slices_list, test_size=config["test_split"])
-
-    if config["eval_train_split"]:
-        # Use the train set for evaluation.
-        test = train
 
     if config["only_foreground_slices"]:
         # Remove slices with all zero masks.
-        test = [case_tuple for case_tuple in test if case_tuple[2].any()]
+        test_slices = [case_tuple for case_tuple in test_slices if case_tuple[2].any()]
 
     if config["invert_masks"]:
-        mask_dtype = train[0][2].dtype
+        mask_dtype = test_slices[0][2].dtype
         # Casts the mask to a boolean array and performs a bitwise not operation.
         # to invert the array, then casts it back to the original dtype.
-        test = [
+        test_slices = [
             (case_id, img, (~mask.astype(bool)).astype(mask_dtype))
-            for case_id, img, mask in test
+            for case_id, img, mask in test_slices
         ]
 
     # Unpack case ids, images and masks from the train list.
-    test_case_ids, test_images, test_masks = list(zip(*test))
+    test_case_ids, test_images, test_masks = list(zip(*test_slices))
 
     if config["quick_test"]:
         # pick central slice since it normally contains a slice with a large
@@ -127,6 +120,7 @@ def main(config):
         metrics_dict = {}
         total_dice = 0.0
         total_accuracy = 0.0
+        valid_dice_count = 0  # Count non-NaN dice scores
         pbar = tqdm(enumerate(test_loader), total=len(test_loader))
 
         for i, (images, masks, case) in pbar:
@@ -145,9 +139,15 @@ def main(config):
             else:
                 dice_loss = calc_dice_loss(preds, masks)
                 dice = (1 - dice_loss).item()
+                # Update totals only if dice is not NaN
+                total_dice += dice
+                valid_dice_count += 1  # Increment valid dice count
 
             # Add to metrics dict.
-            metrics_dict[case_id] = {"dice": dice, "accuracy": accuracy}
+            formatted_dice = (
+                "NaN" if torch.isnan(torch.tensor(dice)) else np.round(dice, 4)
+            )
+            metrics_dict[case_id] = {"dice": formatted_dice, "accuracy": accuracy}
 
             if config["save_segmentations"]:
                 pred = (
@@ -162,17 +162,20 @@ def main(config):
                     nib.Nifti1Image(pred, np.eye(4)),
                     os.path.join(output_seg_dir, f"{case_id}_pred.nii.gz"),
                 )
-            # Update metrics.
-            total_dice += dice
+            # Update accuracy metrics.
             total_accuracy += accuracy
             pbar.set_description(
-                f"Case: {case[0]}, Dice: {dice:.4f}, Accuracy: {accuracy:.4f}"
+                f"Case: {case[0]}, Dice: {formatted_dice}, Accuracy: {accuracy:.4f}"
             )
 
-    # Log average metrics.
-    avg_dice = total_dice / len(test_loader)
-    avg_accuracy = total_accuracy / len(test_loader)
-    print(f"\nAverage Dice Score: {avg_dice:.4f}, Average Accuracy: {avg_accuracy:.4f}")
+        # Log average metrics, avoiding division by zero
+        avg_dice = total_dice / valid_dice_count if valid_dice_count > 0 else torch.nan
+        avg_accuracy = total_accuracy / len(test_loader)
+        avg_dice_str = "NaN" if np.isnan(avg_dice) else f"{avg_dice:.4f}"
+        print(
+            f"\nAverage Dice Score: {avg_dice_str},\
+              Average Accuracy: {avg_accuracy:.4f}"
+        )
 
     # Save results to a csv file.
     df = pd.DataFrame.from_dict(metrics_dict, orient="index")
