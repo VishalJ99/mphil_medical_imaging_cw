@@ -5,10 +5,9 @@ seed: 42 # Random seed for reproducibility.
 img_dir: Dataset/Images # Path to images directory - see README for expected file structure.
 mask_dir: Dataset/Segmentations # Path to masks directory - see README for expected file structure.
 
-
 # Model Configuration
 model_str: unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
-model_save_dir: inverted_model_weights # Directory to save trained model weights.
+model_save_dir: model_weights_QT # Directory to save trained model weights.
 model_weights_path: null # Path to pre-trained model weights.
 
 # Training Parameters
@@ -18,13 +17,24 @@ batch_size: 3 # Batch size for training operations.
 
 # Data Handling
 only_foreground_slices: false # Only include slices with non-zero foreground in the dataset.
-invert_masks: true # Whether to invert background and foreground in masks.
-test_split: 0.33 # Fraction of the dataset reserved for testing.
+invert_masks: false # Whether to invert background and foreground in masks.
 
 # Experimentation Mode
 quick_test: false # Enables quick test mode using only one case slice to test the pipeline.
-visualise: false # Visualise the model prediction on a random case after every epoch during training.
+visualise: true # Visualise the model prediction on a random case after every epoch during training.
                  # (NOTE: visualisations will be uploaded to wandb regardless).
 
 # Loss Configuration
 loss: dice_and_bce # Loss function to use during training. Combination of Dice and Binary Cross Entropy.
+
+
+# Case ids to consider for training.
+case_ids:
+- case_000
+- case_001
+- case_002
+- case_003
+- case_004
+- case_005
+- case_006
+- case_007

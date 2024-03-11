@@ -88,14 +88,14 @@ def seed_everything(seed):
         torch.backends.cudnn.benchmark = False
 
 
-def load_slices_from_dataset(img_dir, mask_dir):
+def load_slices_from_dataset(img_dir, mask_dir, case_ids=None):
     # Load the 3D volume and mask for each case.
     # Expects the dataset to be in the format of:
     # Given in the cw.
-    all_slices_list = []
-    for case_name in os.listdir(img_dir):
-        case_fpath = os.path.join(img_dir, case_name)
-        mask_fpath = os.path.join(mask_dir, case_name + "_seg.npz")
+    slices_list = []
+    for case in case_ids:
+        case_fpath = os.path.join(img_dir, case)
+        mask_fpath = os.path.join(mask_dir, case + "_seg.npz")
 
         case_arr = dicom_dir_to_3d_arr(case_fpath, np.float32)
         mask_arr = load_npz(mask_fpath)
@@ -103,12 +103,12 @@ def load_slices_from_dataset(img_dir, mask_dir):
         # Create a tuple for each slice in the 3D volume.
         for slice_idx in range(case_arr.shape[0]):
             case_tuple = (
-                f"{case_name}_{slice_idx}",
+                f"{case}_{slice_idx}",
                 case_arr[slice_idx],
                 mask_arr[slice_idx],
             )
-            all_slices_list.append(case_tuple)
-    return all_slices_list
+            slices_list.append(case_tuple)
+    return slices_list
 
 
 def get_losses_dict():

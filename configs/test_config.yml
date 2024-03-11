@@ -4,20 +4,23 @@ seed: 42 # Random seed for reproducibility.
 # Data Paths
 img_dir: Dataset/Images # Path to images directory - see README for expected file structure.
 mask_dir: Dataset/Segmentations # Path to masks directory - see README for expected file structure.
-output_dir: inverted_output_unet_testing # Directory to save output files - metrics.json, config.yml, segmentation dir (optional).
+output_dir: all_test_slices # Directory to save output files - metrics.json, config.yml, segmentation dir (optional).
 save_segmentations: true # Directory to save model segmentations (saved in nifti format).
-
-# Testing Parameters
-eval_train_split: false # Evaluate performance on training set.
 
 # Model Configuration
 model_str: unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
-model_weights_path: inverted_model_weights/epoch_10_model.pt # Path to model weights.
+model_weights_path: model_weights/epoch_10_model.pt # Path to model weights.
 
 # Data Handling
 only_foreground_slices: false # Only include slices with non-zero foreground in the dataset.
-invert_masks: true # Whether to invert background and foreground in masks.
-test_split: 0.33 # Fraction of the dataset reserved for testing. Ensure this is consistent with the training configuration.
+invert_masks: false # Whether to invert background and foreground in masks.
 
 # Experimentation Mode
 quick_test: false # Enables quick test mode using only one case slice to test the pipeline.
+
+# Case ids to consider for testing.
+case_ids:
+- case_008
+- case_009
+- case_010
+- case_011
