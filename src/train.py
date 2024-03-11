@@ -6,7 +6,6 @@ from tqdm import tqdm
 import torch
 from torchvision import transforms
 from torchmetrics.classification import BinaryAccuracy
-from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from accelerate import Accelerator
 from datasets import ImageSegmentationDataset
@@ -39,15 +38,6 @@ def main(config):
     # Fetch device.
     device = set_device()
 
-    model_dict = get_model_dict()
-    model = model_dict[config["model_str"]](in_channels=1, out_channels=1)
-
-    if config["model_weights_path"]:
-        model.load_state_dict(
-            torch.load(config["model_weights_path"], map_location=torch.device("cpu"))
-        )
-        print(f"[INFO] Loaded model weights from {config['model_weights_path']}")
-
     # Start a new wandb run to track this train job.
     wandb.init(
         project="medical_imaging_1",
@@ -59,28 +49,29 @@ def main(config):
         print(f"[INFO] {key}: {val}")
 
     # Load the the slices from the volume and mask of each case.
-    all_slices_list = load_slices_from_dataset(
+    train_slices = load_slices_from_dataset(
         config["img_dir"],
         config["mask_dir"],
+        case_ids=config["case_ids"],
     )
-    # Split 2D slice data into train and test sets.
-    train, _ = train_test_split(all_slices_list, test_size=config["test_split"])
 
     # If only foreground slices specified, remove entres with all zero masks.
     if config["only_foreground_slices"]:
-        train = [case_tuple for case_tuple in train if case_tuple[2].any()]
+        train_slices = [
+            case_tuple for case_tuple in train_slices if case_tuple[2].any()
+        ]
 
     if config["invert_masks"]:
-        mask_dtype = train[0][2].dtype
+        mask_dtype = train_slices[0][2].dtype
         # Casts the mask to a boolean array and performs a bitwise not operation.
         # to invert the array, then casts it back to the original dtype.
-        train = [
+        train_slices = [
             (case_id, img, (~mask.astype(bool)).astype(mask_dtype))
-            for case_id, img, mask in train
+            for case_id, img, mask in train_slices
         ]
 
     # Unpack case ids, images and masks from the train list.
-    train_case_ids, train_images, train_masks = list(zip(*train))
+    train_case_ids, train_images, train_masks = list(zip(*train_slices))
 
     if config["quick_test"]:
         # pick central slice since it normally contains a slice with a large
@@ -115,7 +106,18 @@ def main(config):
     )
 
     # Define model, loss function, and optimiser.
+    model_dict = get_model_dict()
+    model = model_dict[config["model_str"]](in_channels=1, out_channels=1)
+
+    if config["model_weights_path"]:
+        model.load_state_dict(
+            torch.load(config["model_weights_path"], map_location=torch.device("cpu"))
+        )
+        print(f"[INFO] Loaded model weights from {config['model_weights_path']}")
+
     loss_fn_dict = get_losses_dict()
+    loss_fn = loss_fn_dict[config["loss"]]()
+
     optim = torch.optim.Adam(model.parameters(), lr=config["lr"])
 
     # Define the mask labels for wandb visualisations.
@@ -125,14 +127,12 @@ def main(config):
         else {0: "lung", 1: "background"}
     )
 
-    # TODO: load loss init from config file.
-    loss_fn = loss_fn_dict[config["loss"]]()
-
     # Move model, optim and dataloader to accelerator.
     accelerator = Accelerator()
     model, optim, dataloader = accelerator.prepare(model, optim, train_loader)
 
     # Define additional performance metrics.
+    # TODO: try putting metrics in accelerator.
     metric = BinaryAccuracy().to(device)
 
     # Train the model.
