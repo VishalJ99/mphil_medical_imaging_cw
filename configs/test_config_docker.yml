@@ -4,7 +4,7 @@ seed: 42 # Random seed for reproducibility.
 # Data Paths
 img_dir: Dataset/Images # Path to images directory - see README for expected file structure.
 mask_dir: Dataset/Segmentations # Path to masks directory - see README for expected file structure.
-output_dir: all_test_slices # Directory to save output files - metrics.json, config.yml, segmentation dir (optional).
+output_dir: docker_test_slices # Directory to save output files - metrics.json, config.yml, segmentation dir (optional).
 save_segmentations: true # Directory to save model segmentations (saved in nifti format).
 
 # Model Configuration
