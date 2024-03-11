@@ -14,8 +14,18 @@ def main(metrics_csv_path):
     df = df.sort_values(by="dice")
 
     print("[INFO] Summary statistics table for Dice and Accuracy metrics:")
+    print(
+        "[NOTE] Dice count may be less than accuracy count due to NaN values\
+        of background slices."
+    )
     summary_statistics = df[["dice", "accuracy"]].describe()
     print(summary_statistics, end="\n\n")
+
+    # Replace 'NaN' strings with numpy.nan
+    df.replace("NaN", np.nan, inplace=True)
+
+    # Drop rows with any NaN values
+    df.dropna(inplace=True)
 
     # Log the slices with the best 3 dice scores.
     best_3 = df[-4:-1]
