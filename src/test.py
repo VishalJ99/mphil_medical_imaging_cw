@@ -144,7 +144,10 @@ def main(config):
                 valid_dice_count += 1  # Increment valid dice count
 
             # Add to metrics dict.
-            metrics_dict[case_id] = {"dice": dice, "accuracy": accuracy}
+            formatted_dice = (
+                "NaN" if torch.isnan(torch.tensor(dice)) else np.round(dice, 4)
+            )
+            metrics_dict[case_id] = {"dice": formatted_dice, "accuracy": accuracy}
 
             if config["save_segmentations"]:
                 pred = (
@@ -161,9 +164,8 @@ def main(config):
                 )
             # Update accuracy metrics.
             total_accuracy += accuracy
-            dice_str = "NaN" if torch.isnan(torch.tensor(dice)) else f"{dice:.4f}"
             pbar.set_description(
-                f"Case: {case[0]}, Dice: {dice_str}, Accuracy: {accuracy:.4f}"
+                f"Case: {case[0]}, Dice: {formatted_dice}, Accuracy: {accuracy:.4f}"
             )
 
         # Log average metrics, avoiding division by zero
