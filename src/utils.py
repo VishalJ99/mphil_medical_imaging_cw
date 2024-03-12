@@ -12,7 +12,7 @@ from models import SimpleUNet, UNet2D
 
 
 def load_npz(file_path, dtype=np.int16):
-    # Load segmentation data from .npz file
+    # Load segmentation data from .npz file.
     data = np.load(file_path)
     assert len(data.files) == 1, "The .npz file should contain only one array"
     tag = data.files[0]
@@ -22,7 +22,7 @@ def load_npz(file_path, dtype=np.int16):
 
 def dicom_dir_to_3d_arr(dicom_dir, dtype=np.int16):
     # Load all DICOM files in the given directory and sort them by slice
-    # position
+    # position.
     files = [
         pydicom.dcmread(os.path.join(dicom_dir, f))
         for f in os.listdir(dicom_dir)
@@ -30,7 +30,7 @@ def dicom_dir_to_3d_arr(dicom_dir, dtype=np.int16):
     ]
     files.sort(key=lambda x: float(x.ImagePositionPatient[2]))
 
-    # Stack the pixel arrays to create a 3D array
+    # Stack the pixel arrays to create a 3D array.
     arr = np.stack([f.pixel_array for f in files]).astype(dtype)
 
     return arr
@@ -45,11 +45,11 @@ def make_niftis(img_dir, seg_f, out_dir):
     img_arr = dicom_dir_to_3d_arr(img_dir).astype(np.int16)
     seg_arr = load_npz(seg_f).astype(np.int16)
 
-    # Create NIfTI images
+    # Create NIfTI images.
     img_nii = nib.Nifti1Image(img_arr, np.eye(4))
     seg_nii = nib.Nifti1Image(seg_arr, np.eye(4))
 
-    # save the nifti images
+    # save the nifti images.
     img_nii_f = os.path.join(out_dir, "img.nii.gz")
     seg_nii_f = os.path.join(out_dir, "seg.nii.gz")
     nib.save(img_nii, img_nii_f)
@@ -57,7 +57,7 @@ def make_niftis(img_dir, seg_f, out_dir):
 
 
 def set_device():
-    # Check for CUDA, then MPS, and default to CPU
+    # Check for CUDA, then MPS, and default to CPU.
     if torch.cuda.is_available():
         device = torch.device("cuda")
     elif torch.backends.mps.is_available():
@@ -77,13 +77,13 @@ def seed_everything(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    # 5. If using CUDA, set also the below for determinism.
+    # If using CUDA, set also the below for determinism.
     if torch.cuda.is_available():
         # Sets the seed for generating random numbers for the current GPU.
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)  # if using multi-GPU.
 
-        # Ensures that the CUDA convolution uses deterministic algorithms
+        # Ensures that the CUDA convolution uses deterministic algorithms.
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
@@ -112,7 +112,7 @@ def load_slices_from_dataset(img_dir, mask_dir, case_ids=None):
 
 
 def get_losses_dict():
-    # Define the loss functions
+    # Define the loss functions.
     loss_fns = {
         "dice": SoftDiceLoss,
         "bce": nn.BCEWithLogitsLoss,
@@ -123,7 +123,7 @@ def get_losses_dict():
 
 
 def get_model_dict():
-    # Define the model classes
+    # Define the model classes.
     model_dict = {
         "unet": UNet2D,
         "demo_unet": SimpleUNet,

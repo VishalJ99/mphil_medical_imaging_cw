@@ -4,6 +4,7 @@ RUN apt-get update
 RUN apt-get install -y build-essential python3-dev
 
 COPY Dataset /mphil_medical_imaging_cw/Dataset
+COPY model_weights/local/epoch_10_model.pt /mphil_medical_imaging_cw/model_weights/local/epoch_10_model.pt
 COPY src /mphil_medical_imaging_cw/src
 COPY configs /mphil_medical_imaging_cw/configs
 COPY environment.yml /mphil_medical_imaging_cw
