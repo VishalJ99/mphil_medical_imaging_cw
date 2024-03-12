@@ -20,7 +20,7 @@ conda env update --file environment.yml
 conda activate mphil_medical_imaging_cw
 
 # Build the Docker image.
-docker build -t medical_image_cw_vj297 .
+docker build -t medical_imaging_cw .
 ```
 
 
