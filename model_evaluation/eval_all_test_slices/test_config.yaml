@@ -1,0 +1,16 @@
+case_ids:
+- case_008
+- case_009
+- case_010
+- case_011
+git_hash: 5df99d04a8e0787577ec89c0dc26578ff65f49d4
+img_dir: Dataset/Images
+invert_masks: false
+mask_dir: Dataset/Segmentations
+model_str: unet
+model_weights_path: model_weights/epoch_10_model.pt
+only_foreground_slices: false
+output_dir: test_all_test_slices
+quick_test: false
+save_segmentations: true
+seed: 42
