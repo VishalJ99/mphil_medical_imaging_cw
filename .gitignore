@@ -10,9 +10,8 @@ Dataset/
 niftis/
 wandb/
 mini_dataset/
-*weights/
+
 *temp*
-*.pt
 *output*
 *test_slices/
 *train_slices/

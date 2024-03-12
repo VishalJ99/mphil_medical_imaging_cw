@@ -1,0 +1,25 @@
+batch_size: 3
+case_ids:
+- case_000
+- case_001
+- case_002
+- case_003
+- case_004
+- case_005
+- case_006
+- case_007
+epochs: 10
+git_hash: 9162b2c6aaadf681dc26d7e812cd6274334bb0b2
+img_dir: Dataset/Images
+invert_masks: false
+loss: dice_and_bce
+lr: 0.01
+mask_dir: Dataset/Segmentations
+model_save_dir: model_weights
+model_str: unet
+model_weights_path: null
+only_foreground_slices: false
+quick_test: false
+seed: 42
+test_split: 0.33
+visualise: true
