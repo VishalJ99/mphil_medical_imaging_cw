@@ -8,7 +8,7 @@ mask_dir: Dataset/Segmentations # Path to masks directory - see README for expec
 
 # Model Configuration
 model_str: unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
-model_save_dir: model_weights_docker # Directory to save trained model weights.
+model_save_dir: model_weights/docker # Directory to save trained model weights.
 model_weights_path: null # Path to pre-trained model weights.
 
 # Training Parameters
@@ -26,8 +26,7 @@ visualise: false # Visualise the model prediction on a random case after every e
                  # (NOTE: visualisations will be uploaded to wandb regardless).
 
 # Loss Configuration
-loss: dice_and_bce # Loss function to use during training. Combination of Dice and Binary Cross Entropy.
-
+loss: dice_and_bce # Loss function to use during training. Options: dice, bce, dice_and_bce
 
 # Case ids to consider for training.
 case_ids:

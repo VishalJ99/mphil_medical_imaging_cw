@@ -15,8 +15,8 @@ def main(metrics_csv_path):
 
     print("[INFO] Summary statistics table for Dice and Accuracy metrics:")
     print(
-        "[NOTE] Dice count may be less than accuracy count due to NaN values\
-        of background slices."
+        "[NOTE] Dice count may be less than accuracy count due to NaN values"
+        "of background slices."
     )
     summary_statistics = df[["dice", "accuracy"]].describe()
     print(summary_statistics, end="\n\n")

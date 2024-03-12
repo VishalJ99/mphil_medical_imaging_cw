@@ -6,10 +6,6 @@ import os
 import pandas as pd
 import argparse
 
-# TODO:
-# Add documentation re assumptions on file paths and assumed structure
-# of output_dir and seg_dir.
-
 
 def main(case_slice_id, img_dir, mask_dir, output_dir):
     # Get the case id and slice index from the case_slice_id.
@@ -35,7 +31,7 @@ def main(case_slice_id, img_dir, mask_dir, output_dir):
     df = pd.read_csv(metrics_csv_path)
     filtered_df = df[df["slice"] == case_slice_id]
 
-    # plot the img, mask and seg.
+    # Plot the img, mask and seg.
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
     ax[0].imshow(case_slice, cmap="gray")
     ax[0].set_title("Case")
@@ -47,7 +43,7 @@ def main(case_slice_id, img_dir, mask_dir, output_dir):
     # Show the metrics for the given case slice.
     df_info = ""
     if not filtered_df.empty:
-        # Formatting dice and accuracy to 4 decimal places
+        # Formatting dice and accuracy to 4 decimal places.
         for col in filtered_df.columns[1:]:
             print(col)
             value = filtered_df.iloc[0][col]
@@ -62,24 +58,29 @@ def main(case_slice_id, img_dir, mask_dir, output_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "case_slice_id", type=str, help="The case slice id to visualise."
+        "case_slice_id",
+        type=str,
+        help="The case slice id to visualise.\
+        Eg Case_100_50.",
     )
+
     parser.add_argument(
         "output_dir",
         type=str,
-        help="Path to the output directory containing the metrics.csv file\
+        help="Path to the output directory of test.py containing the metrics.csv file\
         and the segmentations directory.",
     )
+
     parser.add_argument(
         "--img_dir",
         type=str,
-        help="Path to the directory containing the images.",
+        help="Path to the directory containing the dataset images dir.",
         default="Dataset/Images",
     )
     parser.add_argument(
         "--mask_dir",
         type=str,
-        help="Path to the directory containing the masks.",
+        help="Path to the directory containing the dataset labels dir",
         default="Dataset/Segmentations",
     )
     args = parser.parse_args()
