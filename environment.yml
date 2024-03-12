@@ -11,3 +11,12 @@ dependencies:
   - matplotlib
   - pre-commit
   - scipy
+  - tqdm
+  - pip:
+    - torch
+    - torchvision
+    - torchmetrics
+    - accelerate
+    - wandb
+    - pydicom
+    - nibabel

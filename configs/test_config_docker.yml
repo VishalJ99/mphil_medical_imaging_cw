@@ -4,12 +4,12 @@ seed: 42 # Random seed for reproducibility.
 # Data Paths
 img_dir: Dataset/Images # Path to images directory - see README for expected file structure.
 mask_dir: Dataset/Segmentations # Path to masks directory - see README for expected file structure.
-output_dir: all_test_slices # Directory to save output files - metrics.json, config.yml, segmentation dir (optional).
-save_segmentations: true # Directory to save model segmentations (saved in nifti format).
+output_dir: model_evaluation/docker # Directory to save output files - metrics.json, config.yml, segmentation dir (optional).
+save_segmentations: false # Directory to save model segmentations (saved in nifti format).
 
 # Model Configuration
-model_str: unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
-model_weights_path: model_weights/local_run/epoch_10_model.pt # Path to model weights.
+model_str: unet # Model architecture: demo_unet (unet implementation given in practical) or unet (personal implementation).
+model_weights_path: model_weights/local/epoch_10_model.pt # Path to model weights.
 
 # Data Handling
 only_foreground_slices: false # Only include slices with non-zero foreground in the dataset.
@@ -21,6 +21,3 @@ quick_test: false # Enables quick test mode using only one case slice to test th
 # Case ids to consider for testing.
 case_ids:
 - Case_008
-- Case_009
-- Case_010
-- Case_011

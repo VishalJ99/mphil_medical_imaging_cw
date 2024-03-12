@@ -14,6 +14,25 @@ mini_dataset/
 *temp*
 *.pt
 *output*
+*test_slices/
+*train_slices/
 
 # Notebooks
 *ipynb
+!figs.ipynb
+
+# Sphinx documentation
+docs/*
+!docs/conf.py
+!docs/*.rst
+!docs/_static/
+!docs/_templates/
+!docs/Makefile
+!docs/make.bat
+!docs/requirements.txt
+
+# Report
+report/*
+!report/main.tex
+!report/main.pdf
+!report/fig/

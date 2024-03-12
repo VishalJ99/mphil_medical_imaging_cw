@@ -39,6 +39,7 @@ def main(config):
 
     # Fetch device.
     device = set_device()
+    print("[INFO] Device set to:", device)
 
     # Load model.
     model_dict = get_model_dict()
@@ -47,9 +48,11 @@ def main(config):
         torch.load(config["model_weights_path"], map_location=torch.device("cpu"))
     )
 
+    print("-" * 50)
     print("[INFO] Config options set.")
     for key, val in config.items():
         print(f"[INFO] {key}: {val}")
+    print("-" * 50)
 
     # Load the the slices from the volume and mask of each case.
     test_slices = load_slices_from_dataset(
