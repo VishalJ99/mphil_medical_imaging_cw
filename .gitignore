@@ -33,4 +33,4 @@ docs/*
 report/*
 !report/main.tex
 !report/main.pdf
-!report/fig/
+!report/figs/
