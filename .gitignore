@@ -10,7 +10,7 @@ Dataset/
 niftis/
 wandb/
 mini_dataset/
-
+runs/*
 *temp*
 *output*
 

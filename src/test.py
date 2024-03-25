@@ -8,7 +8,6 @@ from torchmetrics.classification import BinaryAccuracy
 from accelerate import Accelerator
 from datasets import ImageSegmentationDataset
 from utils import (
-    set_device,
     seed_everything,
     load_slices_from_dataset,
     get_model_dict,
@@ -18,6 +17,7 @@ from losses import SoftDiceLoss
 import nibabel as nib
 import numpy as np
 import pandas as pd
+from transforms import WinsoriseTransform, NormaliseTransform
 
 
 def main(config):
@@ -37,9 +37,9 @@ def main(config):
     # Set random seed for reproducability.
     seed_everything(config["seed"])
 
-    # Fetch device.
-    device = set_device()
-    print("[INFO] Device set to:", device)
+    # Initialise the accelerator.
+    accelerator = Accelerator()
+    print("[INFO] Device set to:", accelerator.device)
 
     # Load model.
     model_dict = get_model_dict()
@@ -89,19 +89,22 @@ def main(config):
 
     # Define train data transforms.
     # TODO: Define transforms in config file.
-    test_transforms = transforms.Compose(
-        [
-            transforms.ToTensor(),
-        ]
+    img_transforms = transforms.Compose(
+        [WinsoriseTransform(), NormaliseTransform(), transforms.ToTensor()]
     )
+    # img_transforms = transforms.Compose(
+    #     [transforms.ToTensor()]
+    # )
 
-    # Initialise the dataset.
+    mask_transforms = transforms.Compose([transforms.ToTensor()])
+
+    # Split the dataset into train and validation sets.
     test_dataset = ImageSegmentationDataset(
         test_images,
         test_masks,
         test_case_ids,
-        image_transform=test_transforms,
-        mask_transform=test_transforms,
+        image_transform=img_transforms,
+        mask_transform=mask_transforms,
     )
 
     # Initialise the dataloaders.
@@ -113,8 +116,8 @@ def main(config):
     model.eval()
 
     # Define additional performance metrics.
-    metric = BinaryAccuracy().to(device)
-    calc_dice_loss = SoftDiceLoss()
+    metric = BinaryAccuracy().to(accelerator.device)
+    calc_dice_loss = SoftDiceLoss(apply_sigmoid=False)
 
     metrics_dict = {}
 
@@ -136,6 +139,9 @@ def main(config):
             metric.update(preds, masks)
             accuracy = metric.compute().item()
 
+            # Binarise the predictions.
+            preds = (torch.sigmoid(preds) > 0.5).to(masks.dtype)
+
             # Set dice to nan if mask is all zeros.
             if masks.sum() == 0:
                 dice = torch.nan
@@ -153,14 +159,7 @@ def main(config):
             metrics_dict[case_id] = {"dice": formatted_dice, "accuracy": accuracy}
 
             if config["save_segmentations"]:
-                pred = (
-                    (torch.sigmoid(preds[0]) > 0.5)
-                    .squeeze()
-                    .cpu()
-                    .detach()
-                    .numpy()
-                    .astype(np.uint8)
-                )
+                pred = preds[0].squeeze().cpu().detach().numpy().astype(np.uint8)
                 nib.save(
                     nib.Nifti1Image(pred, np.eye(4)),
                     os.path.join(output_seg_dir, f"{case_id}_pred.nii.gz"),
@@ -172,17 +171,21 @@ def main(config):
             )
 
         # Log average metrics, avoiding division by zero
+        print(
+            f"[INFO] Number of valid dice scores: {valid_dice_count}/{len(test_loader)}"
+        )
         avg_dice = total_dice / valid_dice_count if valid_dice_count > 0 else torch.nan
+        print(avg_dice)
         avg_accuracy = total_accuracy / len(test_loader)
         avg_dice_str = "NaN" if np.isnan(avg_dice) else f"{avg_dice:.4f}"
         print(
-            f"\nAverage Dice Score: {avg_dice_str},\
-              Average Accuracy: {avg_accuracy:.4f}"
+            f"\n[INFO] Average Dice Score: {avg_dice_str},\
+              [INFO] Average Accuracy: {avg_accuracy:.4f}"
         )
 
     # Save results to a csv file.
     df = pd.DataFrame.from_dict(metrics_dict, orient="index")
-    df.index.name = "slice"  # Set the name of the index column to 'slice_id'
+    df.index.name = "slice_id"  # Set the name of the index column to 'slice_id'
     df.reset_index(inplace=True)
     df.to_csv(os.path.join(output_dir, "metrics.csv"), index=False)
 

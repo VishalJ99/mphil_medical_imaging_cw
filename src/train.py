@@ -9,8 +9,8 @@ from torchmetrics.classification import BinaryAccuracy
 import matplotlib.pyplot as plt
 from accelerate import Accelerator
 from datasets import ImageSegmentationDataset
+from transforms import WinsoriseTransform, NormaliseTransform
 from utils import (
-    set_device,
     seed_everything,
     get_losses_dict,
     load_slices_from_dataset,
@@ -21,24 +21,14 @@ from utils import (
 
 def main(config):
     # Check if models_temp_dir exists
-    model_save_dir = config["model_save_dir"]
+    output_dir = config["output_dir"]
 
-    # Creates a dir if one does not exist. Will not overwrite an existing dir.
-    safe_create_dir(model_save_dir)
+    # Creates full dir tree if one does not exist. Will not overwrite an existing dir.
+    safe_create_dir(os.path.join(output_dir, "model_weights"))
 
     # If .git file exists, add git hash to config.
     if os.path.exists(".git"):
         config["git_hash"] = os.popen("git rev-parse HEAD").read().strip()
-
-    config_file = os.path.join(model_save_dir, "config.yaml")
-    with open(config_file, "w") as f:
-        yaml.dump(config, f)
-
-    # Set random seed for reproducability.
-    seed_everything(config["seed"])
-
-    # Fetch device.
-    device = set_device()
 
     if config["wandb_log"]:
         # Start a new wandb run to track this train job.
@@ -47,7 +37,24 @@ def main(config):
             config=config,
         )
 
-    print("[INFO] Device set to:", device)
+        config["wandb_run_url"] = wandb.run.get_url()
+
+    # Save the config to the model save directory for reproducability.
+    config_file = os.path.join(output_dir, "config.yaml")
+    with open(config_file, "w") as f:
+        yaml.dump(config, f)
+
+    # Set random seed for reproducability.
+    seed_everything(config["seed"])
+
+    # Write header of train metrics file.
+    train_metrics_file = os.path.join(output_dir, "train_metrics.csv")
+    with open(train_metrics_file, "w") as f:
+        f.write("epoch,loss,accuracy\n")
+
+    # Initialise the accelerator.
+    accelerator = Accelerator()
+    print("[INFO] Device set to:", accelerator.device)
     print("-" * 50)
     print("[INFO] Config options set.")
     for key, val in config.items():
@@ -80,10 +87,9 @@ def main(config):
     train_case_ids, train_images, train_masks = list(zip(*train_slices))
 
     if config["quick_test"]:
-        # pick central slice since it normally contains a slice with a large
-        # amount of the lungs.
+        # Pick central slice, likely contains more lung than first or last slice.
         print("[INFO] Quick test mode enabled.")
-        print("[INFO] Only using only one case for training and testing.")
+        print("[INFO] Only using only one case for training.")
         mid_train_idx = len(train_case_ids) // 2
         train_case_ids = [train_case_ids[mid_train_idx]]
         train_images = [train_images[mid_train_idx]]
@@ -91,19 +97,23 @@ def main(config):
 
     # Define train data transforms.
     # TODO: Define transforms in config file.
-    train_transforms = transforms.Compose(
-        [
-            transforms.ToTensor(),
-        ]
+    img_transforms = transforms.Compose(
+        [WinsoriseTransform(), NormaliseTransform(), transforms.ToTensor()]
     )
+
+    # img_transforms = transforms.Compose(
+    #     [transforms.ToTensor()]
+    # )
+
+    mask_transforms = transforms.Compose([transforms.ToTensor()])
 
     # Split the dataset into train and validation sets.
     train_dataset = ImageSegmentationDataset(
         train_images,
         train_masks,
         train_case_ids,
-        image_transform=train_transforms,
-        mask_transform=train_transforms,
+        image_transform=img_transforms,
+        mask_transform=mask_transforms,
     )
 
     # Define the dataloaders.
@@ -134,12 +144,11 @@ def main(config):
     )
 
     # Move model, optim and dataloader to accelerator.
-    accelerator = Accelerator()
     model, optim, dataloader = accelerator.prepare(model, optim, train_loader)
 
     # Define additional performance metrics.
     # TODO: try putting metrics in accelerator.
-    metric = BinaryAccuracy().to(device)
+    metric = BinaryAccuracy().to(accelerator.device)
 
     # Train the model.
     for epoch in range(1, config["epochs"] + 1):
@@ -175,6 +184,10 @@ def main(config):
         avg_loss = total_loss / num_batches
         avg_acc = total_acc / num_batches
 
+        # Save metrics to train metrics file.
+        with open(train_metrics_file, "a") as f:
+            f.write(f"{epoch},{avg_loss},{avg_acc}\n")
+
         summary_stats = (
             f"Epoch: {epoch}, Avg. Loss: {avg_loss:.4f}, Avg. Accuracy: {avg_acc:.4f}"
         )
@@ -182,11 +195,10 @@ def main(config):
 
         # Save the model weights.
         model_str = f"epoch_{epoch}_model.pt"
-        model_path = os.path.join(model_save_dir, model_str)
+        model_path = os.path.join(output_dir, "model_weights", model_str)
         torch.save(model.state_dict(), model_path)
 
         # Visualise predictions vs ground truth
-        # TODO: Find a good batch to visualise that has non zero masks.
         img = images[0].squeeze().cpu().detach().numpy()
         mask = masks[0].squeeze().cpu().detach().numpy()
         pred = (torch.sigmoid(preds[0]) > 0.5).squeeze().cpu().detach().numpy()
