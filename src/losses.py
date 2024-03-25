@@ -22,13 +22,12 @@ class SoftDiceLoss(nn.Module):
         self.eps = eps
         self.apply_sigmoid = apply_sigmoid
 
-    def forward(self, preds, targets, apply_sigmoid=True):
+    def forward(self, preds, targets):
         if self.apply_sigmoid:
             preds = torch.sigmoid(preds)
 
         intersection = torch.sum(preds * targets, dim=(2, 3))
         denominator = torch.sum(preds, dim=(2, 3)) + torch.sum(targets, dim=(2, 3))
-
         dice = (2 * intersection) / (denominator + self.eps)
         dice_loss = 1 - dice
         return dice_loss
