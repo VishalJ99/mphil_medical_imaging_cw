@@ -13,10 +13,6 @@ git clone git@github.com:loressa/DataScience_MPhill_practicals.git
 mv DataScience_MPhill_practicals/Dataset Dataset
 rm -rf DataScience_MPhill_practicals
 
-# Fetch the model weights.
-curl -L https://github.com/loressa/DataScience_MPhill_practicals/raw/master/Practical3/SimpleUNet_v3.pt -o ./SimpleUNet_v3.pt
-
-
 # Create the environment.
 conda env update --file environment.yml
 
