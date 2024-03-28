@@ -13,6 +13,10 @@ git clone git@github.com:loressa/DataScience_MPhill_practicals.git
 mv DataScience_MPhill_practicals/Dataset Dataset
 rm -rf DataScience_MPhill_practicals
 
+# Fetch the model weights.
+curl -L https://github.com/loressa/DataScience_MPhill_practicals/raw/master/Practical3/SimpleUNet_v3.pt -o ./SimpleUNet_v3.pt
+
+
 # Create the environment.
 conda env update --file environment.yml
 
@@ -31,7 +35,7 @@ Note: It is recommended to run the code locally if using a machine with CUDA or 
 Make sure the environment is activated before running the following commands.
 ## Training the model
 ```
-python src/train.py config/train_config.yml
+python src/train.py configs/train_config.yml
 ```
 
 ## Testing the model
@@ -39,7 +43,7 @@ NOTE: NaN dice scores are expected as some slices in the case have no lungs to
 segment. In such cases the dice score is always 0, so is set to NaN to avoid
 confusion with a true dice score of 0 (empty pred for non empty ground truth).
 ``` 
-python src/test.py config/test_config.yml
+python src/test.py configs/test_config.yml
 ```
 
 # Docker

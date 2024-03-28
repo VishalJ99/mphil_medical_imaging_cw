@@ -1,6 +1,6 @@
 # General Settings
 seed: 42 # Random seed for reproducibility.
-wandb_log: true
+wandb_log: false
 
 # Data Paths
 img_dir: Dataset/Images # Path to images directory - see README for expected file structure.

@@ -92,7 +92,7 @@ def main(config):
     img_transforms = transforms.Compose(
         [WinsoriseTransform(), NormaliseTransform(), transforms.ToTensor()]
     )
-
+    
     mask_transforms = transforms.Compose([transforms.ToTensor()])
 
     # Split the dataset into train and validation sets.

@@ -9,7 +9,7 @@ save_segmentations: true # Directory to save model segmentations (saved in nifti
 
 # Model Configuration
 model_str: unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
-model_weights_path: runs/local_training/local_model/model_weights/epoch_10_model.pt # Path to model weights.
+model_weights_path: trained_model.pt # Path to model weights.
 
 # Data Handling
 only_foreground_slices: false # Only include slices with non-zero foreground in the dataset.
