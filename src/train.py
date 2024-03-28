@@ -101,10 +101,6 @@ def main(config):
         [WinsoriseTransform(), NormaliseTransform(), transforms.ToTensor()]
     )
 
-    # img_transforms = transforms.Compose(
-    #     [transforms.ToTensor()]
-    # )
-
     mask_transforms = transforms.Compose([transforms.ToTensor()])
 
     # Split the dataset into train and validation sets.
@@ -212,6 +208,7 @@ def main(config):
             ax[2].imshow(img, cmap="gray")
             ax[2].set_title("Image")
             plt.show()
+            plt.close()
 
         if config["wandb_log"]:
             wandb.log(

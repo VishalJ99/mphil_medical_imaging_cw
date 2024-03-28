@@ -8,11 +8,11 @@ mask_dir: Dataset/Segmentations # Path to masks directory - see README for expec
 
 # Model Configuration
 model_str: unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
-model_save_dir: model_weights/local_run/epoch_10_model.pt # Directory to save trained model weights.
+output_dir: runs/local_training/cw_run_no_norm # Directory to save outputs of training. Include model weights, train metrics and config file.
 model_weights_path: null # Path to pre-trained model weights.
 
 # Training Parameters
-lr: 0.01 # Learning rate for training.
+lr: 0.1 # Learning rate for training.
 epochs: 10 # Number of epochs to train the model.
 batch_size: 3 # Batch size for training operations.
 
@@ -32,10 +32,10 @@ loss: dice_and_bce # Loss function to use during training. Combination of Dice a
 # Case ids to consider for training.
 case_ids:
 - Case_000
-- Case_001
-- Case_002
-- Case_003
-- Case_004
 - Case_005
 - Case_006
 - Case_007
+- Case_008
+- Case_009
+- Case_010
+- Case_011

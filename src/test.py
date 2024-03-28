@@ -89,12 +89,12 @@ def main(config):
 
     # Define train data transforms.
     # TODO: Define transforms in config file.
-    img_transforms = transforms.Compose(
-        [WinsoriseTransform(), NormaliseTransform(), transforms.ToTensor()]
-    )
     # img_transforms = transforms.Compose(
-    #     [transforms.ToTensor()]
+    #     [WinsoriseTransform(), NormaliseTransform(), transforms.ToTensor()]
     # )
+    img_transforms = transforms.Compose(
+        [transforms.ToTensor()]
+    )
 
     mask_transforms = transforms.Compose([transforms.ToTensor()])
 
@@ -175,7 +175,6 @@ def main(config):
             f"[INFO] Number of valid dice scores: {valid_dice_count}/{len(test_loader)}"
         )
         avg_dice = total_dice / valid_dice_count if valid_dice_count > 0 else torch.nan
-        print(avg_dice)
         avg_accuracy = total_accuracy / len(test_loader)
         avg_dice_str = "NaN" if np.isnan(avg_dice) else f"{avg_dice:.4f}"
         print(

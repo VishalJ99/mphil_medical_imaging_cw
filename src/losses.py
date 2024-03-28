@@ -15,7 +15,6 @@ class SoftDiceLoss(nn.Module):
     For multi-class segmentation, the softmax activation function should
     be applied instead.
     """
-
     def __init__(self, eps=1e-4, apply_sigmoid=True):
         # apply sigmoid added for debugging purposes.
         super(SoftDiceLoss, self).__init__()
@@ -34,6 +33,14 @@ class SoftDiceLoss(nn.Module):
 
 
 class SoftDiceBCECombinedLoss(nn.Module):
+    """
+    Soft dice loss combined with binary cross entropy loss. Designed to work
+    with the raw logits output from the model. Assumes input is a tensors are
+    of shape (N, 1, H, W) where N is the batch size, 1 is the number of classes,
+    H and W are the height and width of the mask.
+
+    Outputs the combined loss for each image in the batch.
+    """
     def __init__(self, dice_weight=0.5, eps=1):
         super(SoftDiceBCECombinedLoss, self).__init__()
         self.dice_weight = dice_weight

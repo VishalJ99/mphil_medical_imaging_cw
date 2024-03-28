@@ -7,12 +7,29 @@ import random
 from losses import SoftDiceLoss, SoftDiceBCECombinedLoss
 import torch.nn as nn
 from models import SimpleUNet, UNet2D
+from typing import List, Tuple
 
 # TODO: De identify patients patientname, patientid, patientdob, patientsex
 
 
-def load_npz(file_path, dtype=np.int16):
-    # Load segmentation data from .npz file.
+def load_npz(file_path, dtype=np.int16) -> np.ndarray:
+    """
+    Load a .npz file and return the array contained within it.
+    Assumes that the .npz file contains only one array.
+
+    Parameters
+    ----------
+    file_path : str
+        The path to the .npz file.
+
+    dtype : numpy.dtype
+        The data type to cast the array to.
+
+    Returns
+    -------
+    numpy.ndarray
+        The array contained within the .npz file.
+    """
     data = np.load(file_path)
     assert len(data.files) == 1, "The .npz file should contain only one array"
     tag = data.files[0]
@@ -20,9 +37,25 @@ def load_npz(file_path, dtype=np.int16):
     return arr
 
 
-def dicom_dir_to_3d_arr(dicom_dir, dtype=np.int16):
-    # Load all DICOM files in the given directory and sort them by slice
-    # position.
+def dicom_dir_to_3d_arr(dicom_dir: str, dtype=np.int16) -> np.ndarray:
+    """
+    Loads all the DICOM files in a directory, sorts them by the z coordinate as
+    specified by the ImagePositionPatient tag and stacks them to create a 3D array.
+
+    Parameters
+    ----------
+    dicom_dir : str
+        The path to the directory containing the DICOM files.
+
+    dtype : numpy.dtype
+        The data type to cast the array to.
+
+    Returns
+    -------
+    numpy.ndarray
+        A 3D array containing the pixel arrays of the DICOM files.
+
+    """
     files = [
         pydicom.dcmread(os.path.join(dicom_dir, f))
         for f in os.listdir(dicom_dir)
@@ -36,7 +69,27 @@ def dicom_dir_to_3d_arr(dicom_dir, dtype=np.int16):
     return arr
 
 
-def make_niftis(img_dir, seg_f, out_dir):
+def make_niftis(img_dir: str, seg_f: str, out_dir: str) -> None:
+    """
+    Creates a NIfTI image for the 3D volume in the img_dir and the segmentation
+    mask in the seg_f. Saves the NIfTI images in the out_dir. Creates an identity
+    affine matrix for the NIfTI images.
+
+    Parameters
+    ----------
+    img_dir : str
+        The path to the directory containing the DICOM files.
+
+    seg_f : str
+        The path to the .npz file containing the segmentation mask.
+
+    out_dir : str
+        The path to the directory to save the NIfTI images.
+
+    Returns
+    -------
+    None
+    """
     try:
         os.makedirs(out_dir)
     except FileExistsError:
@@ -56,19 +109,20 @@ def make_niftis(img_dir, seg_f, out_dir):
     nib.save(seg_nii, seg_nii_f)
 
 
-def set_device():
-    # Check for CUDA, then MPS, and default to CPU.
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    elif torch.backends.mps.is_available():
-        device = torch.device("mps")
-    else:
-        device = torch.device("cpu")
+def seed_everything(seed: int) -> None:
+    """
+    Sets the random seed for reproducability.
+    Sets seeds for numpy, torch and random.
 
-    return device
+    Parameters
+    ----------
+    seed : int
+        The seed to set for the random number generators.
 
-
-def seed_everything(seed):
+    Returns
+    -------
+    None
+    """
     # Set `PYTHONHASHSEED` environment variable to the seed.
     os.environ["PYTHONHASHSEED"] = str(seed)
 
@@ -88,10 +142,43 @@ def seed_everything(seed):
         torch.backends.cudnn.benchmark = False
 
 
-def load_slices_from_dataset(img_dir, mask_dir, case_ids=None):
-    # Load the 3D volume and mask for each case.
-    # Expects the dataset to be in the format of:
-    # Given in the cw.
+def load_slices_from_dataset(
+    img_dir: int, mask_dir: int, case_ids: List[str] = None
+) -> List[Tuple[str, np.ndarray, np.ndarray]]:
+    """
+    Load a list of all 2D slices in  the 3D volume and mask for each case in the image and mask directories.
+    Also
+    Expects the dataset to be in the format of:
+    
+    img_dir:
+        - Case_1
+            - 1.dcm
+            ...
+        ...
+    
+    mask_dir:
+        - Case_1_seg.npz
+        ...
+    
+
+    Parameters
+    ----------
+    img_dir : str
+        The path to the directory containing case directories of DICOM files.
+    
+    mask_dir : str
+        The path to the directory containing the segmentation masks.
+    
+    case_ids : List[str]
+        A list of case ids to load. If None, all cases in the img_dir will be loaded.
+        These are the names of the case directories in the img_dir.
+    
+    Returns
+    -------
+    List[Tuple[str, np.ndarray, np.ndarray]]
+        A list of tuples containing the case id, 2D image slice and 2D mask slice.
+    
+    """
     slices_list = []
     for case in case_ids:
         case_fpath = os.path.join(img_dir, case)
@@ -111,7 +198,17 @@ def load_slices_from_dataset(img_dir, mask_dir, case_ids=None):
     return slices_list
 
 
-def get_losses_dict():
+def get_losses_dict() -> dict:
+    """
+    Defines dictionary used by train.py to get the loss functions.
+    Allows for easy addition of new loss functions which can then be
+    passed as a string in the config file.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the loss functions.
+    """
     # Define the loss functions.
     loss_fns = {
         "dice": SoftDiceLoss,
@@ -122,7 +219,12 @@ def get_losses_dict():
     return loss_fns
 
 
-def get_model_dict():
+def get_model_dict() -> dict:
+    """
+    Defines dictionary used by train.py to get the models.
+    Allows for easy addition of new models which can then be
+    passed as a string in the config file.
+    """
     # Define the model classes.
     model_dict = {
         "unet": UNet2D,
@@ -132,7 +234,21 @@ def get_model_dict():
     return model_dict
 
 
-def safe_create_dir(dir_path):
+def safe_create_dir(dir_path: str) -> None:
+    """
+    Creates a directory if it does not exist.
+    If the directory exists, checks if it is empty.
+    If the directory is not empty, prints an error message and exits.
+    
+    Parameters
+    ----------
+    dir_path : str
+        The path to the directory to create.
+    
+    Returns
+    -------
+    None
+    """
     if not os.path.isdir(dir_path):
         print(f"[INFO] {dir_path} does not exit, making dir(s)")
         os.makedirs(dir_path)
