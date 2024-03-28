@@ -12,6 +12,8 @@ dependencies:
   - pre-commit
   - scipy
   - tqdm
+  - pip
+  - ipykernel
   - pip:
     - torch
     - torchvision

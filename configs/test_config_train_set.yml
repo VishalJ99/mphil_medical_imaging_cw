@@ -1,0 +1,32 @@
+# General Settings
+seed: 42 # Random seed for reproducibility.
+
+# Data Paths
+img_dir: Dataset/Images # Path to images directory - see README for expected file structure.
+mask_dir: Dataset/Segmentations # Path to masks directory - see README for expected file structure.
+output_dir: runs/local_testing/hu_train_slices # Directory to save output files - metrics.json, config.yml, segmentation dir (optional).
+save_segmentations: true # Directory to save model segmentations (saved in nifti format).
+
+# Model Configuration
+model_str: unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
+model_weights_path: runs/local_training/hu_train_run_pt2/model_weights/epoch_3_model.pt # Path to model weights.
+
+# Data Handling
+only_foreground_slices: false # Only include slices with non-zero foreground in the dataset.
+invert_masks: false # Whether to invert background and foreground in masks.
+
+# Experimentation Mode
+quick_test: false # Enables quick test mode using only one case slice to test the pipeline.
+
+# Case ids to consider for testing.
+case_ids:
+  - Case_000
+  - Case_005
+  - Case_006
+  - Case_007
+  - Case_008
+  - Case_009
+  - Case_010
+  - Case_011
+
+

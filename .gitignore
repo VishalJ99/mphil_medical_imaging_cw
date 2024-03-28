@@ -18,6 +18,7 @@ runs/*
 # Notebooks
 *ipynb
 !figs.ipynb
+!explore_dicoms.ipynb
 
 # Sphinx documentation
 docs/*

@@ -89,11 +89,8 @@ def main(config):
 
     # Define train data transforms.
     # TODO: Define transforms in config file.
-    # img_transforms = transforms.Compose(
-    #     [WinsoriseTransform(), NormaliseTransform(), transforms.ToTensor()]
-    # )
     img_transforms = transforms.Compose(
-        [transforms.ToTensor()]
+        [WinsoriseTransform(), NormaliseTransform(), transforms.ToTensor()]
     )
 
     mask_transforms = transforms.Compose([transforms.ToTensor()])

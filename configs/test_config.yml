@@ -4,12 +4,12 @@ seed: 42 # Random seed for reproducibility.
 # Data Paths
 img_dir: Dataset/Images # Path to images directory - see README for expected file structure.
 mask_dir: Dataset/Segmentations # Path to masks directory - see README for expected file structure.
-output_dir: runs/local_testing/train_slices_wo_norm # Directory to save output files - metrics.json, config.yml, segmentation dir (optional).
+output_dir: runs/local_testing/hu_test_slices # Directory to save output files - metrics.json, config.yml, segmentation dir (optional).
 save_segmentations: true # Directory to save model segmentations (saved in nifti format).
 
 # Model Configuration
 model_str: unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
-model_weights_path: runs/local_training/without_norm/model_weights/epoch_10_model.pt # Path to model weights.
+model_weights_path: runs/local_training/hu_train_run_pt2/model_weights/epoch_3_model.pt # Path to model weights.
 
 # Data Handling
 only_foreground_slices: false # Only include slices with non-zero foreground in the dataset.
@@ -20,18 +20,7 @@ quick_test: false # Enables quick test mode using only one case slice to test th
 
 # Case ids to consider for testing.
 case_ids:
-  - Case_000
-  - Case_005
-  - Case_006
-  - Case_007
-  - Case_008
-  - Case_009
-  - Case_010
-  - Case_011
-
-
-# case_ids:
-#   - Case_001
-#   - Case_002
-#   - Case_003
-#   - Case_004
+  - Case_001
+  - Case_002
+  - Case_003
+  - Case_004
