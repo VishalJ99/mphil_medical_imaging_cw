@@ -25,7 +25,7 @@ python src/de_identify_dataset.py Dataset/Images
 # Build the Docker image.
 docker build -t medical_imaging_cw .
 ```
-# Local
+# Local (Recommended)
 Note: It is recommended to run the code locally if using a machine with CUDA or MPS. 
 
 Make sure the environment is activated before running the following commands.
