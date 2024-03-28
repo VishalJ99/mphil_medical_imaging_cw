@@ -8,7 +8,7 @@ mask_dir: Dataset/Segmentations # Path to masks directory - see README for expec
 
 # Model Configuration
 model_str: unet # Model architecture: demo_unet (example unet implementation shown in practical) or unet (personal implementation).
-output_dir: runs/local_training/cw_run_no_norm # Directory to save outputs of training. Include model weights, train metrics and config file.
+output_dir: runs/local_training/hu_train_run # Directory to save outputs of training. Include model weights, train metrics and config file.
 model_weights_path: null # Path to pre-trained model weights.
 
 # Training Parameters

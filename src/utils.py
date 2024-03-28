@@ -41,6 +41,7 @@ def dicom_dir_to_3d_arr(dicom_dir: str, dtype=np.int16) -> np.ndarray:
     """
     Loads all the DICOM files in a directory, sorts them by the z coordinate as
     specified by the ImagePositionPatient tag and stacks them to create a 3D array.
+    Converts the units to Hounsfield units.
 
     Parameters
     ----------
@@ -63,8 +64,11 @@ def dicom_dir_to_3d_arr(dicom_dir: str, dtype=np.int16) -> np.ndarray:
     ]
     files.sort(key=lambda x: float(x.ImagePositionPatient[2]))
 
-    # Stack the pixel arrays to create a 3D array.
-    arr = np.stack([f.pixel_array for f in files]).astype(dtype)
+    # Convert pixel arrays to Hounsfield units and stack them to create a 3D array.
+    arr = np.stack([
+        file.pixel_array * file.RescaleSlope + file.RescaleIntercept
+        for file in files
+    ]).astype(dtype)
 
     return arr
 

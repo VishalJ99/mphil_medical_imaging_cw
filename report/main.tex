@@ -50,7 +50,6 @@ The code and the data for the analysis described in this section can be found in
 
 \subsection{Dataset Exploration}
 To investigate the dicoms, the \texttt{pydicom} library was used to read the DICOM files from the different cases. The first tag that was investigated was the \texttt{PatientIdentityRemoved} tag. This tag is used to indicate whether the patient identity has been removed from the DICOM file. The tag was checked for all the cases and it was found that the value was \texttt{YES} for all cases. However, investigating the meta data revealed a few cases still had sensitive information. This was removed by the script \texttt{src/de\_identify\_dataset.py} which is called during the set up instructions shown on the README.md file. The next set of tags investigated were the tags that are relevant to the stratification of the data. These tags were the \texttt{PatientSex}, \texttt{KVP}, \texttt{Manufacturer}, and \texttt{ModelName}. The summary of this information is presented in Table \ref{tab:patient_meta}. Note, patient age would also have been included however it was not available for any of the cases in the dataset.
-The summary of this information is presented in Table \ref{tab:patient_meta}.
 
 \begin{table}[h]
     \centering
@@ -76,25 +75,35 @@ The summary of this information is presented in Table \ref{tab:patient_meta}.
 
 When training a model, it's crucial to ensure that both train and test sets are similarly stratified to avoid introducing bias. In this dataset, all fields except sex are consistent across cases. Consequently, only patient sex has been used for stratification. Given the even distribution between male and female cases, no resampling techniques were required to enforce balance.
 
-The subsequent analysis focused on voxel-related metadata. These fields were checked to ensure consistency across cases. The fields examined included voxel size, slice thickness, image orientation, rescale intercept, rescale slope, patient position, and pixel array shape. It was found that all fields were consistent across all cases except in the rescale intercept values, in which case 9 had a value of -1000 compared to the rest of the cases -1024. However, the rescale intercept is only relevant to convert the pixel values to Hounsfield units, which is not necessary for the segmentation task. The only thing that needs to be ensured is that the distribution of intensities is consistent across cases. This was checked by plotting the intensity histograms for all cases, which are shown in Figure \ref{fig:intensity_histograms}. It is important to note that the voxel intensities were winsorised to the 1st and 99th percentiles to remove outliers before plotting the histograms.
+The subsequent analysis focused on voxel-related metadata. These fields were checked to ensure consistency across cases. The fields examined included voxel size, slice thickness, image orientation, rescale intercept, rescale slope, patient position, and pixel array shape. It was found that all fields were consistent across all cases except in the rescale intercept values, in which case 9 had a value of -1000 compared to the rest of the cases -1024. To investigate that the distribution of intensities is consistent across cases. The intensity histograms were plot for all cases, which are shown in Figure \ref{fig:intensity_histograms}. It is important to note that the voxel intensities were winsorised to the 1st and 99th percentiles to remove outliers before plotting the histograms.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/intensity_hist.png}
+    \includegraphics[width=0.8\textwidth]{figs/intensity_histogram_orig.png}
     \caption{Intensity histograms for all cases}
     \label{fig:intensity_histograms}
 \end{figure}
 
-These histograms demonstrate that the intensity distributions are consistent across the different cases in dataset. However, case 9 is identifiable by a histogram peak slightly shifted to the left relative to the peaks of other cases, illustrating a minor deviation in its intensity distribution. To correct for this, a pre processing step was introduced to winsorise and normalise the intensity distributions across all cases before training the model.
+These histograms demonstrate that the intensity distributions are consistent across the different cases in dataset. However, case 9 is identifiable by a histogram peak slightly shifted to the left relative to the peaks of other cases, illustrating a minor deviation in its intensity distribution. To correct for this, all the cases intensities were transformed to the Hounsfield unit scale using the rescale intercept and rescale slope values. The new intensity histograms are shown in Figure \ref{fig:hounsfield_histograms_hu}. The histograms are now consistent across all cases, indicating that the intensities are now on the same scale.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/intensity_histogram_hu.png}
+    \caption{Hounsfield unit histograms for all cases}
+    \label{fig:hounsfield_histograms_hu}
+\end{figure}
 
 \subsection{Converting DICOMs to 3D Numpy Arrays}
 The next step was to convert the DICOM files to 3D numpy arrays. The relevant code for this can be found in the \texttt{\url{src/utils.py}} script under the functions \texttt{\url{load\_npz}} and \texttt{\url{dicom\_dir\_to\_3D\_arr}}. To load the dicoms related to a single case into a 3D array the following steps were taken:
+
 \begin{enumerate}
-    \item Read all the dicom files in the directory using the \texttt{pydicom.dcmread}.
-    \item Sort the files by their $z$ coordinate using the 3rd element of the \texttt{\url{ImagePositionPatient}} attribute.
-    \item Extract the pixel array from each dicom file using the \texttt{pixel\_array} attribute.
-    \item Use \texttt{numpy.stack} function to stack the 2d pixel arrays sorted by their $z$ coordinate along a new axis to create a 3D numpy array.
-\end{enumerate} To load the masks which were provided in the form of a \texttt{.npz} file, 
+    \item Read all the DICOM files in the directory using \texttt{pydicom.dcmread}.
+    \item Sort the files by their $z$ coordinate using the third element of the \texttt{ImagePositionPatient} attribute.
+    \item For each DICOM file, extract the pixel array using the \texttt{pixel\_array} attribute. Then, convert the pixel values to Hounsfield Units (HU) by applying the formula $HU = pixel\_value \times RescaleSlope + RescaleIntercept$. The values for these coefficients are taken from the DICOM file's metadata.
+    \item Use the \texttt{numpy.stack} function to stack the 2D pixel arrays, now converted to Hounsfield Units, sorted by their $z$ coordinate along a new axis. This operation creates a 3D numpy array, where each 2D slice corresponds to a single DICOM image, arranged in the correct order along the patient's $z$ axis.
+\end{enumerate}
+
+To load the masks which were provided in the form of a \texttt{.npz} file, 
 \texttt{numpy.load} function was used to load the file and extract the mask array.
 To verify proper alignment between the 3D image and mask arrays, they were reviewed in ITKSNAP, a standard medical image viewer. Due to ITKSNAP's format limitations, the .npz mask files could not be loaded natively and were first converted to NIfTI. Creating a NIfTI file from a numpy array necessitates specifying an affine matrix—a 4x4 matrix mapping voxel to world coordinates. Rather than deriving this matrix from DICOM metadata, both the DICOM images (which are natively viewable in ITKSNAP) and masks were converted to NIfTI using an identity affine matrix, simplifying the process. The code for which can be found in the \texttt{\url{src/utils.py}} script under the function \texttt{\url{make_niftis}}. The image and lung mask volumes were then reviewed for each case in ITKSNAP and were confirmed found to be correctly aligned by the loading process defined previosly. An example of the image and mask for case 000 is shown in Figure \ref{fig:itksnap}. It is worth noting that because the affine matrix was not derived from DICOM metadata, the images and masks were not displayed in their correct physical dimensions in ITKSNAP. However, this does not affect the segmentation process as the model is trained on the 3D numpy arrays directly, all that matters is the shape and alignment of the image and mask arrays.
 
@@ -121,7 +130,7 @@ The model architecture utilises a 2D UNet, comprising an encoder and a decoder. 
 
 \subsection{Data Splits and Preprocessing}
 The dataset is divided into training and testing sets using a 2:1 ratio. To avoid data leakage, all slices from a specific patient are allocated to the same set, ensuring the model isn't trained and tested on slices from the same case. Additionally, cases are distributed between the splits to maintain a 50-50 male-female ratio, respecting the dataset's diversity and preventing the model from developing biases towards features associated with a single gender.
-Further, since the original data exploration revealed a slight discrepancy in the intensity distributions of case 9, a preprocessing step was introduced to winsorise and normalise the intensity distributions across all cases. This was achieved by winsorising the intensity values to the 1st and 99th percentiles and subsequently normalising the pixel values to the range [0, 1]. This process was applied to each slice independently. 
+Finally, the data is winsorised and normalised to the range [0,1]. This process was applied to each slice independently.  
 
 \subsection{Training}
 % Training the model - loss function, optimizer, learning rate, epochs, batch size.
