@@ -25,18 +25,35 @@ python src/de_identify_dataset.py Dataset/Images
 # Build the Docker image.
 docker build -t medical_imaging_cw .
 ```
+# Local
+Note: It is recommended to run the code locally if using a machine with CUDA or MPS. 
 
+Make sure the environment is activated before running the following commands.
+## Training the model
+```
+python src/train.py config/train_config.yml
+```
 
-# Training the model
+## Testing the model
+NOTE: NaN dice scores are expected as some slices in the case have no lungs to
+segment. In such cases the dice score is always 0, so is set to NaN to avoid
+confusion with a true dice score of 0 (empty pred for non empty ground truth).
+``` 
+python src/test.py config/test_config.yml
+```
+
+# Docker
+## Training the model
 To demo the training of the model on a single case, run the following command:
 
 ```
 docker run -it -v model_weights:/mphil_medical_imaging_cw/model_weights medical_imaging_cw /bin/bash -c "source activate mphil_medical_imaging_cw && python src/train.py configs/train_config_docker.yml"
 ```
 
-# Testing the model
+## Testing the model
 
 To demo the testing of the model on a single case using the pretrained unet, run the following command:
+
 NOTE: NaN dice scores are expected as some slices in the case have no lungs to
 segment. In such cases the dice score is always 0, so is set to NaN to avoid
 confusion with a true dice score of 0 (empty pred for non empty ground truth).
