@@ -59,7 +59,7 @@ segment. In such cases the dice score is always 0, so is set to NaN to avoid
 confusion with a true dice score of 0 (empty pred for non empty ground truth).
 
 ```
-docker run -it -v $(pwd)/model_weights:/mphil_medical_imaging_cw/model_weights -v $(pwd)/model_evaluation:/mphil_medical_imaging_cw/model_evaluation medical_imaging_cw /bin/bash -c "source activate mphil_medical_imaging_cw && python src/test.py configs/test_config_docker.yml"
+docker run -it -v $(pwd):/mphil_medical_imaging_cw medical_imaging_cw /bin/bash -c "source activate mphil_medical_imaging_cw && python src/test.py configs/test_config_docker.yml"
 ```
 
 # Evaluating the model
@@ -68,13 +68,25 @@ To print the summary statistics of the models performance, run the following com
 
 Docker:
 ```
-docker run -it -v $(pwd):/mphil_medical_imaging_cw medical_imaging_cw /bin/bash -c "source activate mphil_medical_imaging_cw && python src/test.py configs/test_config_docker.yml"
+docker run -it -v $(pwd):/mphil_medical_imaging_cw medical_imaging_cw /bin/bash -c "source activate mphil_medical_imaging_cw && python src/eval.py model_evaluation/docker/metrics.csv"
+```
+Or to see evaluation of the fully trained model:
+```
+docker run -it -v $(pwd):/mphil_medical_imaging_cw medical_imaging_cw /bin/bash -c "source activate mphil_medical_imaging_cw && python src/eval.py model_evaluation/eval_all_test_slices/metrics.csv"
 ```
 
 Run locally (to see the box plots):
 Note: Will get poor results if looking at the docker metrics since it was not
 trained on the full dataset.
+
+**Ensure environment is activated!**
+
+To see docker model evaluation:
 ```
-# Ensure environment is activated.
 python src/eval.py model_evaluation/docker/metrics.csv
+```
+
+To see fully trained model evaluation:
+```
+python src/eval.py model_evaluation/eval_all_test_slices/metrics.csv
 ```
