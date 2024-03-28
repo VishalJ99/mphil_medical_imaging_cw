@@ -19,6 +19,9 @@ conda env update --file environment.yml
 # Activate the environment.
 conda activate mphil_medical_imaging_cw
 
+# De identify the data.
+python src/de_identify_dataset.py Dataset/Images
+
 # Build the Docker image.
 docker build -t medical_imaging_cw .
 ```
