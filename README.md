@@ -3,10 +3,10 @@
 Copy the following commands to the terminal to clone the repository, download the model weights, download the pretrained UNet weights, download the data, and build the Docker image.
 ```
 # Clone the repository.
-git clone git@gitlab.developers.cam.ac.uk:phy/data-intensive-science-mphil/A2_MED_Assessment/vj279.git
+git clone git@github.com:VishalJ99/mphil_medical_imaging_cw.git
 
 # Change the working directory to the repository.
-cd vj279
+cd mphil_medical_imaging_cw
 
 # Download the data.
 git clone git@github.com:loressa/DataScience_MPhill_practicals.git
